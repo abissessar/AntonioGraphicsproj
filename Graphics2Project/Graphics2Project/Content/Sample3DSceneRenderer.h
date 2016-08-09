@@ -4,6 +4,7 @@
 #include "ShaderStructures.h"
 #include "..\Common\StepTimer.h"
 #include <DirectXMath.h>
+#include <vector>
 using namespace DirectX;
 
 namespace Graphics2Project
@@ -51,12 +52,29 @@ namespace Graphics2Project
 		XMFLOAT4X4 world, camera, proj;
 
 		//////////////////////////////////
+		std::vector<Vertex> IL_verts;
+		std::vector<unsigned int> IL_index;
+
+		void objload(std::vector<Vertex>& _verts, std::vector<unsigned>& _index, const char* filename);
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_vertexBufferfloor;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_indexBufferfloor;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout>	m_inputLayoutfloor;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>	m_vertexShaderfloor;
 
-		
+		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_constantBufferDirlight;
+		DirectionalLightBuffer						m_constantBufferDirlightData;
+		Microsoft::WRL::ComPtr<ID3D11PixelShader>	m_pixelShaderDirlight;
+
+		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_constantBufferPointlight;
+		PointLightBuffer						m_constantBufferPointlightData;
+
+		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_constantBufferSpotlight;
+		SpotLightBuffer						m_constantBufferSpotlightData;
+
+		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_vertexBufferobj;
+		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_indexBufferobj;
+
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_SRV;
 
 		//////////////////////////////////
 	};
