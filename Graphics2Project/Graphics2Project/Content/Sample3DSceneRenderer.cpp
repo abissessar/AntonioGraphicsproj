@@ -94,6 +94,10 @@ extern char buttons[256];
 // Called once per frame, rotates the cube and calculates the model and view matrices.
 void Sample3DSceneRenderer::Update(DX::StepTimer const& timer)
 {
+	XMMATRIX matrix;
+	matrix = XMMatrixIdentity();
+	//matrix = XMMatrixTranslation(1, 1, 1);
+	model[0].WM = matrix;
 	if (!m_tracking)
 	{
 		// Convert degrees to radians, then convert seconds to rotation angle
@@ -108,7 +112,7 @@ void Sample3DSceneRenderer::Update(DX::StepTimer const& timer)
 
 	if (buttons['W'])
 	{
-		newcamera.r[3] = newcamera.r[3] + newcamera.r[2] * -timer.GetElapsedSeconds() * 5.0;
+		newcamera.r[3] = newcamera.r[3] + newcamera.r[2] * timer.GetElapsedSeconds() * 5.0;
 	}
 
 	if (a_down)
@@ -118,7 +122,7 @@ void Sample3DSceneRenderer::Update(DX::StepTimer const& timer)
 
 	if (s_down)
 	{
-		newcamera.r[3] = newcamera.r[3] + newcamera.r[2] * timer.GetElapsedSeconds() * 5.0;
+		newcamera.r[3] = newcamera.r[3] + newcamera.r[2] * -timer.GetElapsedSeconds() * 5.0;
 	}
 
 	if (d_down)
@@ -188,7 +192,8 @@ void Sample3DSceneRenderer::Render()
 	}
 
 	auto context = m_deviceResources->GetD3DDeviceContext();
-
+	XMMATRIX potato = XMMatrixTranspose(model[0].WM);
+	XMStoreFloat4x4(&m_constantBufferData.model, potato);
 	// Prepare the constant buffer to send it to the graphics device.
 	context->UpdateSubresource1(
 		m_constantBuffer.Get(),
@@ -229,27 +234,27 @@ void Sample3DSceneRenderer::Render()
 	);
 
 	// Each vertex is one instance of the VertexPositionColor struct.
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	context->IASetVertexBuffers(
-		0,
-		1,
-		m_vertexBufferobj.GetAddressOf(),
-		&stride,
-		&offset
-	);
+	//UINT stride = sizeof(Vertex);
+	//UINT offset = 0;
+	//context->IASetVertexBuffers(
+	//	0,
+	//	1,
+	//	m_vertexBufferobj.GetAddressOf(),
+	//	&stride,
+	//	&offset
+	//);
 
-	context->IASetIndexBuffer(
-		m_indexBufferobj.Get(),
-		DXGI_FORMAT_R32_UINT, // Each index is one 16-bit unsigned integer (short).
-		0
-	);
-
+	//context->IASetIndexBuffer(
+	//	m_indexBufferobj.Get(),
+	//	DXGI_FORMAT_R32_UINT, // Each index is one 16-bit unsigned integer (short).
+	//	0
+	//);
+	model[0].SetBuffer(context);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	context->IASetInputLayout(m_inputLayoutfloor.Get());
 
-	context->PSSetShaderResources(0, 1, m_SRV.GetAddressOf());
+	context->PSSetShaderResources(0, 1, model[0].m_SRV.GetAddressOf());
 
 	// Attach our vertex shader.
 	context->VSSetShader(
@@ -293,14 +298,38 @@ void Sample3DSceneRenderer::Render()
 		nullptr,
 		0
 	);
+	context->PSSetSamplers(
+		0,
+		1,
+		m_state.GetAddressOf()
+	);
 
 	// Draw the objects.
-	context->DrawIndexed(
-		IL_index.size(),
+	model[0].Drawindex(context);
+	//XMStoreFloat4x4(&m_constantBufferData.model, model[1].WM);
+	//context->UpdateSubresource1(
+	//	m_constantBuffer.Get(),
+	//	0,
+	//	NULL,
+	//	&m_constantBufferData,
+	//	0,
+	//	0,
+	//	0
+	//);
+	//model[1].SetBuffer(context);
+	//context->PSSetShaderResources(0, 1, model[1].m_SRV.GetAddressOf());
+	/*context->VSSetConstantBuffers1(
 		0,
-		0
-	);
-	//Start floor
+		1,
+		m_constantBuffer.GetAddressOf(),
+		nullptr,
+		nullptr
+	);*/
+	//model[1].Drawindex(context);
+
+	////Start floor
+	UINT stride = sizeof(Model::Vertex);
+	UINT offset = 0;
 	context->IASetVertexBuffers(
 		0,
 		1,
@@ -308,12 +337,17 @@ void Sample3DSceneRenderer::Render()
 		&stride,
 		&offset
 	);
+	//CreateDDSTextureFromFile(m_deviceResources->GetD3DDevice(), L"checkers.dds", NULL, &m_SRV);
+	context->PSSetShaderResources(0, 1, model[0].m_SRV.GetAddressOf());
+
 
 	context->IASetIndexBuffer(
 		m_indexBufferfloor.Get(),
 		DXGI_FORMAT_R16_UINT, // Each index is one 16-bit unsigned integer (short).
 		0
 	);
+	//context->PSSetShaderResources(0, 1, 0);
+
 	context->DrawIndexed(
 		m_indexCount,
 		0,
@@ -323,8 +357,8 @@ void Sample3DSceneRenderer::Render()
 
 void Sample3DSceneRenderer::CreateDeviceDependentResources()
 {
-
-	objload(IL_verts, IL_index, "Goomba.obj");
+	
+	//objload(IL_verts, IL_index, "Goomba.obj");
 	// Load shaders asynchronously.
 	auto loadVSTask = DX::ReadDataAsync(L"SampleVertexShader.cso");
 	auto loadPSTask = DX::ReadDataAsync(L"SamplePixelShader.cso");
@@ -429,6 +463,8 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 					m_constantBufferSpotlight.GetAddressOf()
 				)
 			);
+			CD3D11_SAMPLER_DESC sampler = CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
+		m_deviceResources->GetD3DDevice()->CreateSamplerState(&sampler, m_state.GetAddressOf());
 		});
 
 		// Once both shaders are loaded, create the mesh.
@@ -502,7 +538,12 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 				)
 			);*/
 			////////////////////////////////////////////////////////////////////////////////////////////
-			static const Vertex floorVertices[] =
+			char* goombaname = "Goomba.obj";
+			wchar_t* goombatext = L"Diffuse_Fuzzy_Corrupt.dds";
+			Model goomba(goombaname, goombatext, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0));
+			model.push_back(goomba);
+		
+			static const Model::Vertex floorVertices[] =
 			{
 				{ XMFLOAT3(-3.0f, -1.0f, 3.0f),XMFLOAT2(0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), },
 				{ XMFLOAT3(3.0, -1.0f,  3.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), },
@@ -546,7 +587,7 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 					&m_indexBufferfloor
 				)
 			);
-			////////////////////////////////////////////////////////////////////////////////////////////
+			//////////////////////////////////////////////////////////////////////////////////////////
 		});
 
 		// Once the cube is loaded, the object is ready to be rendered.
@@ -572,7 +613,7 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 		m_pixelShaderDirlight.Reset();
 		m_inputLayoutfloor.Reset();
 	}
-		void Sample3DSceneRenderer::objload(std::vector<Vertex>& _verts, std::vector<unsigned>& _index, const char* filename)
+	/*	void Sample3DSceneRenderer::objload(std::vector<Vertex>& _verts, std::vector<unsigned>& _index, const char* filename)
 		{
 			std::vector<XMFLOAT3> tempverts;
 			std::vector<XMFLOAT2> tempuv;
@@ -674,4 +715,4 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 				)
 			);
 			HRESULT h = CreateDDSTextureFromFile(m_deviceResources->GetD3DDevice(), L"Diffuse_Fuzzy_Corrupt.dds", NULL, &m_SRV);
-		}
+		}*/

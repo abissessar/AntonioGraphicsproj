@@ -40,11 +40,11 @@ namespace Graphics2Project
 		DirectX::XMFLOAT4 Spot_dir;
 		DirectX::XMFLOAT4 Spot_radius;
 	};
-	struct Vertex
-	{
-		DirectX::XMFLOAT3 pos;
-		//DirectX::XMFLOAT3 color;
-		DirectX::XMFLOAT2 uv;
-		DirectX::XMFLOAT3 norm;
-	};
+	//struct Vertex
+	//{
+	//	DirectX::XMFLOAT3 pos;
+	//	//DirectX::XMFLOAT3 color;
+	//	DirectX::XMFLOAT2 uv;
+	//	DirectX::XMFLOAT3 norm;
+	//};
 }

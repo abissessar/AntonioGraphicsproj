@@ -15,3 +15,4 @@
 #include <concrt.h>
 #include <DDSTextureLoader.h>
 #include <Content\ShaderStructures.h>
+#include <vector>

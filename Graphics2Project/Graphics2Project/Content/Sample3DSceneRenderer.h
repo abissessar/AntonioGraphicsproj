@@ -5,6 +5,7 @@
 #include "..\Common\StepTimer.h"
 #include <DirectXMath.h>
 #include <vector>
+#include "Model.h"
 using namespace DirectX;
 
 namespace Graphics2Project
@@ -52,10 +53,9 @@ namespace Graphics2Project
 		XMFLOAT4X4 world, camera, proj;
 
 		//////////////////////////////////
-		std::vector<Vertex> IL_verts;
-		std::vector<unsigned int> IL_index;
+		
 
-		void objload(std::vector<Vertex>& _verts, std::vector<unsigned>& _index, const char* filename);
+		//void objload(std::vector<Vertex>& _verts, std::vector<unsigned>& _index, const char* filename);
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_vertexBufferfloor;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_indexBufferfloor;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout>	m_inputLayoutfloor;
@@ -74,7 +74,8 @@ namespace Graphics2Project
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_vertexBufferobj;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_indexBufferobj;
 
-		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_SRV;
+		std::vector<Model> model;
+		Microsoft::WRL::ComPtr<ID3D11SamplerState>  m_state;
 
 		//////////////////////////////////
 	};

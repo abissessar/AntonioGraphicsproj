@@ -55,8 +55,8 @@ float4 main(PixelShaderInput input) : SV_TARGET
 
 
 	float4 color = color1 + color2 + color3;
-	color = color *tex_color;
 	color = saturate(color);
+	color = color *tex_color;
 	color.w = tex_color.w;
 return float4(color);
 }
