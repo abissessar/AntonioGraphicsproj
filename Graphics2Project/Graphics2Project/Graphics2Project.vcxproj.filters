@@ -79,6 +79,7 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="SkyboxOcean.dds" />
+    <Image Include="checkers.dds" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -87,7 +88,6 @@
     <None Include="Graphics2Project_TemporaryKey.pfx" />
     <None Include="Goomba.obj" />
     <None Include="Diffuse_Fuzzy_Corrupt.dds" />
-    <None Include="..\..\..\checkers.dds" />
     <None Include="Cube.obj" />
     <None Include="PawnSurface_Color.dds" />
     <None Include="Pawn.obj" />
