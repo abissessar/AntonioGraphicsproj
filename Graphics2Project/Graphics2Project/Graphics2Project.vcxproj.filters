@@ -41,9 +41,6 @@
     <FxCompile Include="Content\SamplePixelShader.hlsl">
       <Filter>Content</Filter>
     </FxCompile>
-    <FxCompile Include="Content\SampleVertexShader.hlsl">
-      <Filter>Content</Filter>
-    </FxCompile>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
       <Filter>Assets</Filter>
     </Image>
@@ -81,6 +78,7 @@
     <Image Include="Assets\StoreLogo.png">
       <Filter>Assets</Filter>
     </Image>
+    <Image Include="SkyboxOcean.dds" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -90,15 +88,22 @@
     <None Include="Goomba.obj" />
     <None Include="Diffuse_Fuzzy_Corrupt.dds" />
     <None Include="..\..\..\checkers.dds" />
+    <None Include="Cube.obj" />
+    <None Include="PawnSurface_Color.dds" />
+    <None Include="Pawn.obj" />
+    <None Include="SunsetSkybox.dds" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\VertexShaderFloor.hlsl">
       <Filter>Content</Filter>
     </FxCompile>
-    <FxCompile Include="Content\PixelShaderFloor.hlsl">
+    <FxCompile Include="PixelShaderDirectional.hlsl">
       <Filter>Content</Filter>
     </FxCompile>
-    <FxCompile Include="PixelShaderDirectional.hlsl">
+    <FxCompile Include="Content\PixelShaderSkybox.hlsl">
+      <Filter>Content</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\VertexShaderSkybox.hlsl">
       <Filter>Content</Filter>
     </FxCompile>
   </ItemGroup>

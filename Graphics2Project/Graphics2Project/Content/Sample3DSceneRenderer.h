@@ -49,6 +49,7 @@ namespace Graphics2Project
 		bool	m_loadingComplete;
 		float	m_degreesPerSecond;
 		bool	m_tracking;
+		bool	m_floorloaded;
 
 		XMFLOAT4X4 world, camera, proj;
 
@@ -75,7 +76,11 @@ namespace Graphics2Project
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_indexBufferobj;
 
 		std::vector<Model> model;
+		std::vector<Model> skybox;
 		Microsoft::WRL::ComPtr<ID3D11SamplerState>  m_state;
+
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState>	m_clockwise;
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState>	m_counterclockwise;
 
 		//////////////////////////////////
 	};
