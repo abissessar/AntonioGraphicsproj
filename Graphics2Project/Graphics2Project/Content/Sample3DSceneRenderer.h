@@ -61,6 +61,8 @@ namespace Graphics2Project
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_indexBufferfloor;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout>	m_inputLayoutfloor;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>	m_vertexShaderfloor;
+		Microsoft::WRL::ComPtr<ID3D11InputLayout>	m_inputLayoutnorm;
+
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer>		m_constantBufferDirlight;
 		DirectionalLightBuffer						m_constantBufferDirlightData;
@@ -77,10 +79,17 @@ namespace Graphics2Project
 
 		std::vector<Model> model;
 		std::vector<Model> skybox;
+		std::vector<Model> normalmap;
+
 		Microsoft::WRL::ComPtr<ID3D11SamplerState>  m_state;
 
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState>	m_clockwise;
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState>	m_counterclockwise;
+
+		Microsoft::WRL::ComPtr<ID3D11VertexShader>	m_vertexShadernorm;
+		Microsoft::WRL::ComPtr<ID3D11PixelShader>	m_pixelShadernorm;
+
+		float move;
 
 		//////////////////////////////////
 	};

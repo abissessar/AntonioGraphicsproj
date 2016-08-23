@@ -40,14 +40,14 @@ float4 main(PixelShaderInput input) : SV_TARGET
 
 	float3 dir = normalize(Point_pos.xyz - input.wpos.xyz);
 	//r = saturate(dot(dir.xyz, input.normal));
-	float attenuationFO = 1.0f - saturate(length(Spot_pos - input.normal) / Point_radius.x);
+	float attenuationFO = 1.0f - saturate(length(Point_pos - input.wpos.xyz) / Point_radius.x);
 	float4 color2 = attenuationFO*PointColor;
 
 
 	dir = normalize(Spot_pos.xyz - input.wpos.xyz);
-	r = saturate(dot(-dir.xyz, Spot_Dir.xyz));
+	r = saturate(dot(-dir.xyz, normalize(Spot_Dir.xyz)));
 	//float spotfact = (r > Spot_radius.z) ? 1 : 0;
-	attenuationFO = 1.0f - saturate(length(Spot_pos - input.normal) / Spot_radius.x);
+	attenuationFO = 1.0f - saturate(length(Spot_pos - input.wpos.xyz) / Spot_radius.x);
 	float attenuationCE = 1.0 - saturate((Spot_radius.y - r) / (Spot_radius.y - Spot_radius.z));
 	float FinalAtten = attenuationFO*attenuationCE;
 	float Lightr = saturate(dot(dir.xyz, input.normal));
@@ -55,6 +55,7 @@ float4 main(PixelShaderInput input) : SV_TARGET
 
 
 	float4 color = color1 + color2 + color3;
+
 	color = saturate(color);
 	color = color *tex_color;
 	color.w = tex_color.w;

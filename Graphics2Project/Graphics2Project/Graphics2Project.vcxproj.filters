@@ -80,6 +80,10 @@
     </Image>
     <Image Include="SkyboxOcean.dds" />
     <Image Include="checkers.dds" />
+    <Image Include="Castle.dds" />
+    <Image Include="Space.dds" />
+    <Image Include="brick.dds" />
+    <Image Include="brickBump.dds" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -104,6 +108,9 @@
       <Filter>Content</Filter>
     </FxCompile>
     <FxCompile Include="Content\VertexShaderSkybox.hlsl">
+      <Filter>Content</Filter>
+    </FxCompile>
+    <FxCompile Include="VertexShaderNormal.hlsl">
       <Filter>Content</Filter>
     </FxCompile>
   </ItemGroup>

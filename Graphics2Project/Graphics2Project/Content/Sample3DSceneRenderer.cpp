@@ -26,16 +26,18 @@ Sample3DSceneRenderer::Sample3DSceneRenderer(const std::shared_ptr<DX::DeviceRes
 	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 
 	m_constantBufferDirlightData.directional_dir = XMFLOAT4(0.0f, -1.0f, 0.0f, 0.0f);
-	m_constantBufferDirlightData.directional_color = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
+	m_constantBufferDirlightData.directional_color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	m_constantBufferPointlightData.point_color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	m_constantBufferPointlightData.point_pos = XMFLOAT4(0.0f, -1.0f, 0.0f, 0.0f);
-	m_constantBufferPointlightData.point_radius = XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f);
+	m_constantBufferPointlightData.point_pos = XMFLOAT4(0.0f, 0.9f, 0.0f, 0.0f);
+	m_constantBufferPointlightData.point_radius = XMFLOAT4(3.0f,0.0f, 0.0f, 0.0f);
 
 	m_constantBufferSpotlightData.Spot_color = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
 	m_constantBufferSpotlightData.Spot_dir = XMFLOAT4(0.0f, -1.0f, 0.0f, 1.0f);
 	m_constantBufferSpotlightData.Spot_pos = XMFLOAT4(0.0f, -0.5f, 0.0f, 1.0f);
 	m_constantBufferSpotlightData.Spot_radius = XMFLOAT4(20.0f, 0.85f, 0.8, 0.0f);
+
+
 }
 
 // Initializes view parameters when the window size changes.
@@ -97,7 +99,11 @@ void Sample3DSceneRenderer::Update(DX::StepTimer const& timer)
 {
 
 	//matrix = XMMatrixTranslation(1, 1, 1);
-
+	m_constantBufferDirlightData.directional_dir = XMFLOAT4(m_constantBufferDirlightData.directional_dir.x + (move/2), -1.0f, 0.0f, 0.0f);
+	m_constantBufferPointlightData.point_pos = XMFLOAT4(m_constantBufferPointlightData.point_pos.x - (move*1.2), 0.9f,0.0f , 0.0f);
+	m_constantBufferSpotlightData.Spot_pos = XMFLOAT4(m_constantBufferSpotlightData.Spot_pos.x + move, -0.5f, 0.0f, 1.0f);;
+	m_constantBufferSpotlightData.Spot_dir = XMFLOAT4(0.0f, -1.0f, m_constantBufferSpotlightData.Spot_dir.z + move, 1.0f);
+	if ((m_constantBufferSpotlightData.Spot_pos.x >= 4.0f) || (m_constantBufferSpotlightData.Spot_pos.x <= -4.0f)) move *= -1;
 
 	XMMATRIX potato = XMMatrixIdentity();
 	skybox[0].WM = potato;
@@ -132,6 +138,7 @@ void Sample3DSceneRenderer::Update(DX::StepTimer const& timer)
 	{
 		newcamera.r[3] = newcamera.r[3] + newcamera.r[0] * timer.GetElapsedSeconds() * 5.0;
 	}
+
 
 	Windows::UI::Input::PointerPoint^ point = nullptr;
 
@@ -319,11 +326,52 @@ void Sample3DSceneRenderer::Render()
 	// clear depth stencil view here
 	context->ClearDepthStencilView(m_deviceResources->GetDepthStencilView(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+
+
+
+	context->VSSetShader(
+		m_vertexShadernorm.Get(),
+		nullptr,
+		0
+	);
+
+	context->PSSetShader(
+		m_pixelShadernorm.Get(),
+		nullptr,
+		0
+	);
+	for (int i = 0; i < normalmap.size(); i++)
+	{
+		XMMATRIX potato2 = XMMatrixTranspose(normalmap[i].WM);
+		XMStoreFloat4x4(&m_constantBufferData.model, potato2);
+		context->UpdateSubresource1(
+			m_constantBuffer.Get(),
+			0,
+			NULL,
+			&m_constantBufferData,
+			0,
+			0,
+			0
+		);
+		normalmap[i].SetBuffer(context);
+		context->PSSetShaderResources(0, 1, normalmap[i].m_SRV.GetAddressOf());
+		context->PSSetShaderResources(1, 1, normalmap[i].m_SRVnorm.GetAddressOf());
+
+		context->VSSetConstantBuffers1(
+			0,
+			1,
+			m_constantBuffer.GetAddressOf(),
+			nullptr,
+			nullptr
+		);
+		normalmap[i].Drawindex(context);
+	}
 	context->VSSetShader(
 		m_vertexShaderfloor.Get(),
 		nullptr,
 		0
 	);
+
 	context->PSSetShader(
 		m_pixelShaderDirlight.Get(),
 		nullptr,
@@ -440,11 +488,13 @@ void Sample3DSceneRenderer::Render()
 
 void Sample3DSceneRenderer::CreateDeviceDependentResources()
 {
-
+	move = 0.05f;
 	//objload(IL_verts, IL_index, "Goomba.obj");
 	// Load shaders asynchronously.
 	auto loadVSTask = DX::ReadDataAsync(L"VertexShaderSkybox.cso");
 	auto loadPSTask = DX::ReadDataAsync(L"PixelShaderSkybox.cso");
+	auto loadPS2Task = DX::ReadDataAsync(L"SamplePixelShader.cso");
+	auto loadVS2Task = DX::ReadDataAsync(L"VertexShaderNormal.cso");
 	auto loadVSTaskFloor = DX::ReadDataAsync(L"VertexShaderFloor.cso");
 	auto loadPSTaskLight = DX::ReadDataAsync(L"PixelShaderDirectional.cso");
 	// After the vertex shader file is loaded, create the shader and input layout.
@@ -462,6 +512,7 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
 		DX::ThrowIfFailed(
@@ -488,6 +539,7 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
 		DX::ThrowIfFailed(
@@ -500,18 +552,107 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 			)
 		);
 	});
+	auto createVS2Task = loadVS2Task.then([this](const std::vector<byte>& fileData) {
+		DX::ThrowIfFailed(
+			m_deviceResources->GetD3DDevice()->CreateVertexShader(
+				&fileData[0],
+				fileData.size(),
+				nullptr,
+				&m_vertexShadernorm
+			)
+		);
+		static const D3D11_INPUT_ELEMENT_DESC vertexDescfloor[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		
+		DX::ThrowIfFailed(
+			m_deviceResources->GetD3DDevice()->CreateInputLayout(
+				vertexDescfloor,
+				ARRAYSIZE(vertexDescfloor),
+				&fileData[0],
+				fileData.size(),
+				&m_inputLayoutfloor
+			)
+		);
+	});
 
 	// After the pixel shader file is loaded, create the shader and constant buffer.
-	auto createPSTask = loadPSTaskLight.then([this](const std::vector<byte>& fileData) {
+		auto createPSTask = loadPSTaskLight.then([this](const std::vector<byte>& fileData) {
+			DX::ThrowIfFailed(
+				m_deviceResources->GetD3DDevice()->CreatePixelShader(
+					&fileData[0],
+					fileData.size(),
+					nullptr,
+					&m_pixelShaderDirlight
+				)
+			);
+			CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+			DX::ThrowIfFailed(
+				m_deviceResources->GetD3DDevice()->CreateBuffer(
+					&constantBufferDesc,
+					nullptr,
+					&m_constantBuffer
+				)
+			);
+			CD3D11_BUFFER_DESC constantBufferDirlightDesc(sizeof(DirectionalLightBuffer), D3D11_BIND_CONSTANT_BUFFER);
+			DX::ThrowIfFailed(
+				m_deviceResources->GetD3DDevice()->CreateBuffer(
+					&constantBufferDirlightDesc,
+					nullptr,
+					m_constantBufferDirlight.GetAddressOf()
+				)
+			);
+			CD3D11_BUFFER_DESC constantBufferPointlightDesc(sizeof(PointLightBuffer), D3D11_BIND_CONSTANT_BUFFER);
+			DX::ThrowIfFailed(
+				m_deviceResources->GetD3DDevice()->CreateBuffer(
+					&constantBufferPointlightDesc,
+					nullptr,
+					m_constantBufferPointlight.GetAddressOf()
+				)
+			);
+			CD3D11_BUFFER_DESC constantBufferSpotlightDesc(sizeof(SpotLightBuffer), D3D11_BIND_CONSTANT_BUFFER);
+			DX::ThrowIfFailed(
+				m_deviceResources->GetD3DDevice()->CreateBuffer(
+					&constantBufferSpotlightDesc,
+					nullptr,
+					m_constantBufferSpotlight.GetAddressOf()
+				)
+			);
+			CD3D11_SAMPLER_DESC sampler = CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
+			m_deviceResources->GetD3DDevice()->CreateSamplerState(&sampler, m_state.GetAddressOf());
+
+		});
+
+	auto createPSTaskskybox = loadPSTask.then([this](const std::vector<byte>& fileData) {
 		DX::ThrowIfFailed(
 			m_deviceResources->GetD3DDevice()->CreatePixelShader(
 				&fileData[0],
 				fileData.size(),
 				nullptr,
-				&m_pixelShaderDirlight
+				&m_pixelShader
 			)
 		);
+		CD3D11_RASTERIZER_DESC counterclockwise = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+		counterclockwise.FrontCounterClockwise = true;
+		m_deviceResources->GetD3DDevice()->CreateRasterizerState(&counterclockwise, m_counterclockwise.GetAddressOf());
 
+		CD3D11_RASTERIZER_DESC clockwise = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+		clockwise.FrontCounterClockwise = false;
+		m_deviceResources->GetD3DDevice()->CreateRasterizerState(&clockwise, m_clockwise.GetAddressOf());
+	});
+	auto createPS2Task = loadPS2Task.then([this](const std::vector<byte>& fileData) {
+		DX::ThrowIfFailed(
+			m_deviceResources->GetD3DDevice()->CreatePixelShader(
+				&fileData[0],
+				fileData.size(),
+				nullptr,
+				&m_pixelShadernorm
+			)
+		);
 		CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
 		DX::ThrowIfFailed(
 			m_deviceResources->GetD3DDevice()->CreateBuffer(
@@ -547,24 +688,6 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 		CD3D11_SAMPLER_DESC sampler = CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
 		m_deviceResources->GetD3DDevice()->CreateSamplerState(&sampler, m_state.GetAddressOf());
 
-	});
-
-	auto createPSTaskskybox = loadPSTask.then([this](const std::vector<byte>& fileData) {
-		DX::ThrowIfFailed(
-			m_deviceResources->GetD3DDevice()->CreatePixelShader(
-				&fileData[0],
-				fileData.size(),
-				nullptr,
-				&m_pixelShader
-			)
-		);
-		CD3D11_RASTERIZER_DESC counterclockwise = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
-		counterclockwise.FrontCounterClockwise = true;
-		m_deviceResources->GetD3DDevice()->CreateRasterizerState(&counterclockwise, m_counterclockwise.GetAddressOf());
-
-		CD3D11_RASTERIZER_DESC clockwise = CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
-		clockwise.FrontCounterClockwise = false;
-		m_deviceResources->GetD3DDevice()->CreateRasterizerState(&clockwise, m_clockwise.GetAddressOf());
 	});
 
 	// Once both shaders are loaded, create the mesh.
@@ -704,7 +827,7 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 	});
 	auto createSkyTask = (createPSTaskskybox && createVSTask).then([this]() {
 		char* modelname = "Cube.obj";
-		wchar_t* modeltext = L"SkyboxOcean.dds";
+		wchar_t* modeltext = L"Space.dds";
 		Model cube(modelname, modeltext, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0));
 		skybox.push_back(cube);
 
@@ -712,7 +835,7 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 	auto createGoombaTask = (createPSTask && createVSTaskFloor).then([this]() {
 		char*modelname1 = "Goomba.obj";
 		wchar_t*modeltext1 = L"Diffuse_Fuzzy_Corrupt.dds";
-		Model goomba(modelname1, modeltext1, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0));
+		Model goomba(modelname1, modeltext1, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0), modeltext1);
 		XMMATRIX matrix;
 		matrix = XMMatrixIdentity();
 		goomba.WM = matrix;
@@ -721,19 +844,21 @@ void Sample3DSceneRenderer::CreateDeviceDependentResources()
 	});
 	auto createFloorTask = (createPSTask && createVSTaskFloor).then([this]() {
 		char*modelname3 = "Cube.obj";
-		wchar_t*modeltext3 = L"Checkers.dds";
-		Model floor(modelname3, modeltext3, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0));
+		wchar_t*modeltext3 = L"brick.dds";
+		wchar_t*normtext = L"brickBump.dds";
+
+		Model floor(modelname3, modeltext3, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0), normtext);
 		XMMATRIX matrix;
 		matrix = XMMatrixIdentity();
 		matrix = XMMatrixTranslation(0.0f, -1.0f, 0.0f);
-		matrix = XMMatrixMultiply(XMMatrixScaling(5.0f, 0.1, 5.0f), matrix);
+		matrix = XMMatrixMultiply(XMMatrixScaling(20.0f, 0.1, 20.0f), matrix);
 		floor.WM = matrix;
-		model.push_back(floor);	
+		normalmap.push_back(floor);	
 	});
 	auto createPawnTask = (createPSTask && createVSTaskFloor).then([this]() {
 		char*modelname2 = "Pawn.obj";
 		wchar_t*modeltext2 = L"PawnSurface_Color.dds";
-		Model chess(modelname2, modeltext2, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0));
+		Model chess(modelname2, modeltext2, m_deviceResources->GetD3DDevice(), XMFLOAT3(0, 0, 0), modeltext2);
 		XMMATRIX matrix;
 		matrix = XMMatrixIdentity();
 		matrix = XMMatrixTranslation(-10.0f, -0.8f, 0.0f);
